@@ -28,7 +28,6 @@ import datetime
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Conv2D, Flatten, Dropout, MaxPooling2D, ZeroPadding2D
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
-
 import os
 import matplotlib.pyplot as plt
 %matplotlib inline
@@ -100,90 +99,64 @@ from tensorflow.keras import layers, Model, Sequential, regularizers
 
 #construct individual learner - Xception
 def entry_flow(inputs) :
-
     x = Conv2D(32, 3, strides = 2, padding='same')(inputs)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     x = Conv2D(64,3,padding='same')(x)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     previous_block_activation = x
-
     for size in [128, 256, 728] :
-
         x = Activation('relu')(x)
         x = SeparableConv2D(size, 3, padding='same')(x)
         x = BatchNormalization()(x)
-
         x = Activation('relu')(x)
         x = SeparableConv2D(size, 3, padding='same')(x)
         x = BatchNormalization()(x)
-
         x = MaxPooling2D(3, strides=2, padding='same')(x)
-
         residual = Conv2D(size, 1, strides=2, padding='same')(previous_block_activation)
-
         x = tensorflow.keras.layers.Add()([x, residual])
         previous_block_activation = x
-
     return x
   
 def middle_flow(x, num_blocks=8) :
-
     previous_block_activation = x
-
     for _ in range(num_blocks) :
-
         x = Activation('relu')(x)
         x = SeparableConv2D(728, 3, padding='same')(x)
         x = BatchNormalization()(x)
-
         x = Activation('relu')(x)
         x = SeparableConv2D(728, 3, padding='same')(x)
         x = BatchNormalization()(x)
-
         x = Activation('relu')(x)
         x = SeparableConv2D(728, 3, padding='same')(x)
         x = BatchNormalization()(x)
-
         x = tensorflow.keras.layers.Add()([x, previous_block_activation])
         previous_block_activation = x
-
     return x
   
 def exit_flow(x) :
-
     previous_block_activation = x
-
     x = Activation('relu')(x)
     x = SeparableConv2D(728, 3, padding='same')(x)
     x = BatchNormalization()(x)
-
     x = Activation('relu')(x)
     x = SeparableConv2D(1024, 3, padding='same')(x) 
     x = BatchNormalization()(x)
-
     x = MaxPooling2D(3, strides=2, padding='same')(x)
-
     residual = Conv2D(1024, 1, strides=2, padding='same')(previous_block_activation)
     x = tensorflow.keras.layers.Add()([x, residual])
-
     x = Activation('relu')(x)
     x = SeparableConv2D(728, 3, padding='same')(x)
     x = BatchNormalization()(x)
-
     x = Activation('relu')(x)
     x = SeparableConv2D(1024, 3, padding='same')(x)
     x = BatchNormalization()(x)
-
     x = GlobalAveragePooling2D()(x)
     x = Dense(2, activation='linear')(x)
-
     return x  
 
-inputs = Input(shape=(224,224,3))
+inputs = Input(shape=(224,224,3)) #input images with size of 224*224 in rgb color
 outputs = exit_flow(middle_flow(entry_flow(inputs)))
 xception = Model(inputs, outputs)
 
@@ -196,7 +169,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 #define check_point for model training
 checkpoint_filepath = 'weights.{epoch:02d}-{val_loss:.2f}.h5'
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath,
-                                                            monitor = 'val_accuracy',
+                                                            monitor = 'val_accuracy', #select the model with validation accuracy
                                                             mode = 'max',
                                                             save_best_only=True)
 
